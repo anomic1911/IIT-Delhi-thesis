@@ -1,0 +1,14 @@
+\chapter{CONCLUSION AND FUTURE IDEAS}
+\label{chap:conc}
+
+\section{Conclusion}
+Graph learning is an interesting problem to solve at the intersection of graph theory and machine learning with lots of potential applications. Existing graph learning methods depend on the graph structure \textit{a priori} and thus have little practical applications in the real world where we often have no prior information about the data. Our work integrates structured graph learning and graph model selection to solve this limitation through identifying the underlying graph structure of the data. As a starting point, we have proposed algorithms for component identification and bipartite identification and have empirically demonstrated their performance through exhaustive evaluation in Section~\ref{chap:result}. Our proposed Algorithm~\ref{alg:k-comp-id}  for component identification correctly identifies true number of components for synthetic datasets as well as real datasets and provides better results than $k$-means algorithm. Our Algorithm~\ref{alg:bip-id} for bipartite identification is also able to distinguish between simple connected graph and bipartite graph for synthetic datasets. This structure identification will allow us to learn graphs which are most likely to be the true graph or gaussian graphical model from which the data is sampled.
+
+Our algorithms uses SGL algorithm under the hood which required eigenvalue decomposition. Therefore the time complexity of our proposed algorithms is $O(p^3)$ where $p$ is the number of nodes. This potentially limits the scalability of the algorithm and provides a scope of future work. Whereas the $k$-means algorithm takes $O(t*k*n*p)$ time for a fixed number $t$ of iterations, $n$ ($p$-dimensional) points and $k$ number of centroids (or clusters).
+
+\section{Future Work}
+We believe the following directions must be a good starting point for further research:
+
+\paragraph{Extension to other graph structures:} Our work currently supports component and bipartite identification. The future work will focus on improving the criteria  to incorporate different graph structures such as multi-component bipartite, Erdos-Renyi Graphs etc. We also envisage that more research and stronger baselines will come up for the problem of graph structure identification from data. Also, moving to non-$i.i.d.$ assumptions on data can further strengthen the research and practical applications, which is true for many machine learning problems.
+		
+\paragraph{Spectral density based methods:} As spectral properties influence graph structure, we think it will be an interesting direction to develop spectral density based methods for structure identification. This can help in making the algorithm scalable to large number of nodes. 
