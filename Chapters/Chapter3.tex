@@ -1,0 +1,72 @@
+\chapter{GRAPH MODEL SELECTION}
+\label{chap:gms}
+
+\section{Scope and Objectives}
+In order to tackle the problem of automatic graph structure learning, we use model selection along with the SGL/SGA/SGLA algorithm. If we can identify the structure of graph beforehand, we can directly learn the graphs from data.  The underlying graph structure can be multi-component graph, bipartite graph, multi-component bipartite graph, grid graph etc. Given a data, we propose a generic criteria to identify the graph structure `best` suitable to the data. Before we move forward, we need to ask what is `best` here? Unlike the classical machine learning problems where our goal is to find the model closest to the truth (i.e. true data distribution) using KL Divergence, here we want to choose the model which is most likely to be the truth. We use model selection and degrees of freedom to tackle the structure identifiability problem. \cite{chen2008extended} introduced extended Bayesian Information Criterion (eBIC) to incorporate model complexity in the ordinary Bayesian Information Criterion (BIC) using degrees of freedom (DoF) of the model. BIC can be thought of as maximizing the posterior model probability conditioned on true data generating process. \cite{foygel2010extended} used eBIC for model selection in Gaussian Graphical models and found that it performs better than either cross-validation or the ordinary BIC. They also showed scalability of eBIC with number of nodes $p$ and number of samples $n$ and gave asymptotic bounds on the number of edges i.e. controlling the sparsity. 
+ 
+\cite{foygel2010extended} defined eBIC for GGMs by replacing the DoF with number of edges in the learned graph: 
+\begin{equation}
+\mathbf{\operatorname{eBIC}_{\gamma}(\hat{\Theta})=2 \ell_{n}(\hat{\Theta})-|\mathcal{E}| \log n-4 \gamma|\mathcal{E}| \log p}
+%\mathbf{\mathrm{eBIC}_{\gamma}(\hat{\Theta})=2 \ell_{n}(\hat{\Theta})-d \log n-4 \gamma d \log p \quad }
+\end{equation}
+
+where, $\mathbf{\hat{\Theta}}$ is the estimated precision matrix of the learned graph, $\mathbf{\ell_{n}(\hat{\Theta})}$ is maximum likelihood estimate of the model, $|\mathcal{E}|$ is the number of edges counted using the unique non-zero entries in $\mathbf{\hat{\Theta}}$ and $\gamma \in[0,1]$ is the tuning parameter to control the sparsity of the learned graph. If,
+\begin{itemize}
+		\setlength\itemsep{0.6em}
+	\item $\gamma=0 \implies$ ordinary BIC
+	\item $\gamma=1 \implies$ additional sparsity
+	\item $\gamma=0.5 \implies$ good trade-off
+\end{itemize}
+$\text { Note: If } n>>p \text {, a good choice is } \gamma=0 \text { and if } n \sim p \text { choose } \gamma=0.5 \text { . }$ Our main contribution is to employ eBIC for graph structure identification under some regularity conditions. This is the first such application of eBIC to the best of our knowledge. Our choice of eBIC is motivated due to several reasons:
+\begin{itemize}
+	\setlength\itemsep{0.5em}
+	\item We want a parsimonious model with as few predictor variables as possible
+	\item accounts for likelihood of different models
+	\item $|\mathcal{E}|$ incorporates the degrees of freedom in the model
+	\item Allows to learn sparse graph for high dimensional data $p>>n$
+\end{itemize}
+
+\section{Proposed Algorithms}
+Our goal is to find the best graph structure for the given data, so that we can learn the graph using the SGL/SGA/SGLA algorithm. Any set of parameters of SGL/SGA/SGLA constitutes a model and we want to choose the model which is most likely to be the truth. Given a graph, finding the number of components in it is a well studied problem in the graph literature. But given the data whose underlying graph structure is multi-component, what is the best choice of k to learn the graph? This is the problem we would like to solve in our pursuit of structure identifiability. We propose Algorithm~\ref{alg:k-comp-id} to find the best choice of k to learn the graph. We loop over number of components upto $K$ and estimate the precision matrix $\hat{\Theta}_{k} $ for k-component graphs using SGL algorithm. The degrees of freedom for the graph is determined through the non-zero entries in the precision matrix. A threshold can also be used to detemine the edges in some cases. Depending on the number of samples and number of nodes, we choose the value of $\gamma$, based on which eBIC is computed. Ideally the model with maximum eBIC score is most likely among the candidate models. Therefore the graph should be learned using this value of $k$ using SGL algorithm, which is expected to be the most likely true graph. A detailed comparison of our proposed algorithm and $k$-means algorithm for clustering can be found in Section~\ref{chap:result}.
+
+%TODO: Fix both the algorithms
+\begin{algorithm}[ht]
+	\KwIn{SCM $S$, number of nodes $p$, and the number of samples $n$.}
+	\For{$k=1,2,...,K$}
+	{
+		Estimate: $\mathbf{\hat{\Theta}_{k} \leftarrow \operatorname{SGL}\left(k, c_{1}, c_{2}, . .\right) \text{ with } c_{1}, c_{2}}$ as very small and very large values.
+
+		Compute DoF: $\mathbf{|\mathcal{E}|_{k} = \left\{ \text{unique non-zeros in } \hat{\Theta}_{k} \right\}   } $, choose $\gamma_{k} \in[0,1]$ 		
+		
+		Compute: $\mathbf{\operatorname{eBIC}\left(\hat{\Theta}_{k}\right)=\log \operatorname{gdet}\left(\hat{\Theta}_{k}\right)-\operatorname{Tr}\left(S \hat{\Theta}_{k}\right)-|\mathcal{E}|_{k} \log n-4 \gamma_{k} |\mathcal{E}|_{k} \log p}$ 
+	}
+
+	Choose $k$ with maximum eBIC $\left(\hat{\Theta}_{k}\right)$
+	
+	\caption{Component identification to learn best graph}
+	\label{alg:k-comp-id}
+\end{algorithm}
+
+Our second goal is to identify whether the underlying graph structure of data is bipartite or not. For simplicity, we consider the connected bipartite case only. We use the SGA algorithm to estimate the bipartite precision matrix $\hat{\Theta}_{bip}$ and SGL algorithm to estimate precision matrix for single component graph (or simple connected graph) $\hat{\Theta}_{1}$.  Then we compute the eBIC scores of the two models and conclude the structure which has higher eBIC score. Algorithm~\ref{alg:bip-id} describes this proposed formulation.
+
+\begin{algorithm}[ht]
+	\KwIn{Input: SCM $S$, number of nodes $p$, and the number of samples $n$.}
+	Estimate: $\mathbf{\hat{\Theta}_{bip} \leftarrow \operatorname{SGA}\left(c_{1}, c_{2}, . .\right) \text{ with } c_{1}, c_{2}}$ as very small and very large values.
+	
+	Estimate: $\mathbf{\hat{\Theta}_{1} \leftarrow \operatorname{SGL}\left(k=1, c_{1}, c_{2}, . .\right) \text{ with } c_{1}, c_{2}}$ as very small and very large values.
+	
+	Compute DoF for bipartite structure: $\mathbf{|\mathcal{E}|_{bip} = \left\{ \text{unique non-zeros in } \hat{\Theta}_{bip} \right\} } $, choose $\gamma_{bip} \in[0,1]$ 
+	
+	Compute DoF for simple connected structure: $\mathbf{|\mathcal{E}|_{1} = \left\{ \text{unique non-zeros in } \hat{\Theta}_{1} \right\}   } $, choose $\gamma_{1} \in[0,1]$ 
+	
+	Compute: $\mathbf{\operatorname{eBIC}\left(\hat{\Theta}_{bip}\right)=\log \operatorname{gdet}\left(\hat{\Theta}_{bip}\right)-\operatorname{Tr}\left(S \hat{\Theta}_{bip}\right)-|\mathcal{E}|_{bip} \log n-4 \gamma_{bip} |\mathcal{E}|_{bip} \log p}$ 
+	
+	Compute: $\mathbf{\operatorname{eBIC}\left(\hat{\Theta}_{1}\right)=\log \operatorname{gdet}\left(\hat{\Theta}_{1}\right)-\operatorname{Tr}\left(S \hat{\Theta}_{1}\right)-|\mathcal{E}|_{1} \log n-4 \gamma_{1} |\mathcal{E}|_{1} \log p}$ 		
+	
+	Chose the structure which has maximum $\operatorname{eBIC}\left(\hat{\Theta}_{\mathrm{bip}}\right), \operatorname{eBIC}(\hat{\Theta}_{1})$
+	
+	\caption{Bipartite identification: connected case}
+	\label{alg:bip-id}
+\end{algorithm}
+
+
